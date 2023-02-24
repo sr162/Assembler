@@ -1,7 +1,20 @@
 #include "pre_assembler.h"
+#include "error_messages.h"
+#include "structure.h"
+#include "constant.h"
+#include <errno.h>
 
-int which_instruction(char * line);
-int is_label (headSymbol * sym, char * line, char name[SYMBOL_LENGTH], int * error, int lineCounter);
-int uniqueLabelName(headSymbol * sym, char * labelName, int * error , int lineCounter)
-void put_in_symbolTable(char * labelName, headSymbol * sym, char * type, int IC, int * error);
+void first_pass(char *nameOfAsFile, essentials *assem_param, headSymbol *sym, headData *head_data_line, int *error, int *entry_flag, int *external_flag);
+int is_label (headSymbol *sym, char *line, char *name, int *error, int lineCounter, int symbolType);
+void save_label_name(char *line, char *label_name);
+int validLabelName(headSymbol *sym, char *labelName, int type, int *error , int lineCounter);
+int check_word(char *line, char *command);
+void reading_data_param(essentials *assem_param, headData *head_data, char *line, int *error, int lineCounter);
+void reading_string_param(essentials *assem_param, headData *head_data, char *line, int *error, int lineCounter);
+void readingInstruction(essentials *assem_param, headData *head_data, char *line , int *error, int lineCounter);
+void checkInstParam(essentials *assem_param, char *line , int *error, int lineCounter, int instructInd);
+int check_register(char num);
+int check_number(char *line);
+void skipChars(char *line);
 
+void printSymbol(headSymbol *head);

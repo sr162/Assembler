@@ -1,115 +1,117 @@
 #include "pre_assembler.h"
 
-char* places_macros(char * asFile){
+void places_macros(char *nameOfAmFile, char *nameOfAsFile, int *error){
 
-    FILE * sourceFile = NULL;
-    FILE * amFile = NULL;
+    FILE *amFile = NULL;
+    FILE *asFile = NULL;
     char line [LINE_LENGTH]= {'\0'};
     char mcr_name[LINE_LENGTH] = {'\0'};
     char copyLine [LINE_LENGTH]= {'\0'};
-    int posFirstLineOfMcr = -1 ; /* the position of sourceFile in the file with ftell() */
+    int posFirstLineOfMcr = -1 ; /* the position of amFile in the file with ftell() */
     int countMacroLines = 0; /* count the amount lines in the macro */
     int inMcr = 0, skipMcr = 0; /* flag if we are point in macro block, flag if we past at list one macro */
-    headMacro * mcr ; /* head of the macro list */
+    int lineCounter = 0;
+    headMacro *mcr = createMacroTable(); /* head of the macro list */
 
-    mcr = createMacroTable();
-    sourceFile = checkFileOpening(sourceFile, asFile, "r");
-    amFile = checkFileOpening(amFile, changeToAm(asFile), "w+");
+    if(!(amFile = checkFileOpening(amFile, nameOfAmFile, "r+", error)))
+        return;
 
-    while (fgets(line, LINE_LENGTH, sourceFile) != NULL) { /* we run until we get to the end of file */
+    if(!(asFile = checkFileOpening(asFile, nameOfAsFile, "w+", error)))
+        return;
 
-        char *ptrLine;
+    while (fgets(line, LINE_LENGTH, amFile) != NULL) { /* we run until we get to the end of file */
+
+        char *ptrLine = line;
         fpos_t pos;
-        fgetpos(sourceFile, &pos);
-        ptrLine = line;
+        fgetpos(amFile, &pos);
         strcpy(copyLine, line);
-        skipSpacesAndTabs(ptrLine);
+        lineCounter++;
 
+        skipSpacesAndTabs(ptrLine);
         /* we check if we get to macro block */
          if (checkWord (ptrLine, "mcr")) {
 
             ptrLine += 3;
             removeAllSpaces(ptrLine); /* we want only the name of the macro */
 
-            if (unValidName(ptrLine))
-                continue;
+            if (!invalidName(ptrLine ,error, lineCounter)){
 
-            else {
                 inMcr = 1;
                 skipMcr = 1;
 
                 if (posFirstLineOfMcr == -1)
-                    posFirstLineOfMcr = ftell(
-                            sourceFile); /* save the position of the file pointer from the beginning of the file to the first line of the macro  */
+                    posFirstLineOfMcr = (int) ftell(amFile); /* save the position of the file pointer from the beginning of the file to the first line of the macro  */
 
                 strcpy(mcr_name, ptrLine);
+                continue;
             }
         }
 
         /* we get to the end of the macro */
-        else if (checkWord (ptrLine, "endmcr")) {
+        if (checkWord (ptrLine, "endmcr") && inMcr) {
 
             inMcr = 0;
-            put_in_mcrTable(mcr, mcr_name, posFirstLineOfMcr, countMacroLines);
+            add_to_mcrTable(mcr, mcr_name, posFirstLineOfMcr, countMacroLines);
             countMacroLines = 0;
             posFirstLineOfMcr = -1 ;
+            continue;
         }
 
          /* we in the macro block */
-         else if (inMcr) {
+         if (inMcr) {
 
              countMacroLines++;
+             continue;
          }
 
-        /* when we are not in mcr we copy the line to the as file , or we copy mcr lines insted of mcr name*/
-        else {
+         if (skipMcr) {
 
-             if (skipMcr) {
+             if (it_is_mcrName(mcr, ptrLine, asFile, amFile)) {
 
-                 if (it_is_mcrName(mcr, ptrLine, amFile, sourceFile)) {
-                     fsetpos(sourceFile, &pos);
-                     continue;
-                 }
+                 fsetpos(amFile, &pos);
+                 continue;
              }
-
-             fputs(copyLine, amFile);
          }
+
+        fputs(copyLine, asFile);
     }
 
-    free(mcr);
-    fclose(sourceFile);
+    free_macroTable(mcr);
     fclose(amFile);
-
-    return changeToAm(asFile);
+    fclose(asFile);
 }
 
-/* change the last char in the name of the file that given from s to m (.as -> .am) */
-char * changeToAm (char * fileAs){
+void printMacro(headMacro *head){
 
-    /*int lenNameFileAs = strlen(fileAs);*/
+    macroTable *tmp = head->head;
+    if(tmp == NULL)
+        printf("NULL\n");
+    while(tmp != NULL){
 
-    fileAs = "amFile.txt" ;
-   /* fileAs[lenNameFileAs-1] = 'm' ;*/
+        printf("%s, %d, %d\n", tmp->mcrName, tmp->numOfLines, tmp->pos_of_firstMcrLine);
+        tmp = tmp->next;
+    }
 
-    return fileAs;
 }
 
 /* check if we get to macro block */
-int checkWord (char line[LINE_LENGTH], char * word){
+int checkWord (char *line, char *word){
 
     int i = 0;
     int letterCounter = 0;
+    int lenWord = strlen(word);
 
-    while((line[i] >= 'A' && line[i] <= 'Z') || (line[i] >= 'a' && line[i] <= 'z') || (line[i] >= 0 && line[i] <= 9) || line[i] == '#' || line[i] == '.' ){
+    while((line[i] >= 'A' && line[i] <= 'Z') || (line[i] >= 'a' && line[i] <= 'z') || (line[i] >= '0' && line[i] <= '9') || line[i] == '#' || line[i] == '.' ){
 
         letterCounter++;
         i++;
     }
 
-    if(strlen(word) < letterCounter)
+    if(lenWord != letterCounter)
         return 0;
 
-    if(strncmp(line, word, strlen(word) ) == 0 )
+
+    if(strncmp(line, word, letterCounter) == 0)
         return 1;
 
 
@@ -144,65 +146,13 @@ void removeAllSpaces(char *p) {
     p[count] = '\0'; /* finish the string */
 }
 
-/* check if the name of the macro is a instruction or guidance or register name */
-int inValidName(char * name){
-
-    int i ;
-
-    for (i = 0 ; i < LEN_INSTRUCTIONS ; i++){
-
-        if(!strcmp(name, instructions[i]))
-            return 1;
-    }
-
-    for (i = 0 ; i < LEN_GUIDELINES ; i++){
-
-        if(!strcmp(name, guidelines[i]))
-            return 1;
-    }
-
-    for (i = 0 ; i < LEN_REGESTIERS; i++){
-
-        if(!strcmp(name, regesters[i]))
-            return 1;
-    }
-
-    return 0;
-}
-
-/* we put all the data of the macro in the macro table */
-void put_in_mcrTable(headMacro *headMcr, char name[LINE_LENGTH], int posFirstLine, int linesAmount){
-
-    macroTable * p = malloc(sizeof(macroTable *));
-    macroTable * tmp ;
-    if (!p)
-        memoAllocationFail();
-
-    /* save all the parameters of the macro we want to save */
-    strcpy(p->mcrName, name) ;
-    p->pos_of_firstMcrLine = posFirstLine;
-    p->numOfLines = linesAmount;
-    p->next = NULL;
-
-    if(!(headMcr->head)) /* if the first macro is not install */
-        headMcr->head = p;
-
-    else{
-        tmp = headMcr->head;
-        while (tmp->next != NULL) /* we want to insert p to the last macro in the list */
-            tmp = tmp->next;
-
-        tmp->next = p;
-    }
-}
 
 /* check if we get to macro name after we past the block of this macro */
-int it_is_mcrName(headMacro * mcr, char * line, FILE * amFile, FILE * source){
+int it_is_mcrName(headMacro *mcr, char *line, FILE *asFile, FILE *source){
 
     int i = 0;
     char copyLine[LINE_LENGTH] = {'\0'};
-    macroTable *tmp;
-    tmp = mcr->head;
+    macroTable *tmp = mcr->head;
 
     while(tmp != NULL){
 
@@ -213,7 +163,7 @@ int it_is_mcrName(headMacro * mcr, char * line, FILE * amFile, FILE * source){
             while(i < tmp->numOfLines){
 
                 fgets(copyLine, LINE_LENGTH, source);
-                fputs(copyLine, amFile);
+                fputs(copyLine, asFile);
                 i++ ;
             }
             return 1;
@@ -223,7 +173,4 @@ int it_is_mcrName(headMacro * mcr, char * line, FILE * amFile, FILE * source){
 
     return 0;
 }
-
-
-
 

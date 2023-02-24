@@ -9,59 +9,154 @@ void checkNumOfArgu (int args){
 }
 
 /* check if we can open the file and return ERROR if not */
-FILE * checkFileOpening(FILE * fd, char * fileToOpen, char * mode){
+FILE *checkFileOpening(FILE *fd, char *fileToOpen, char *mode, int *error){
 
     if (!(fd = fopen(fileToOpen, mode))) {
+
         printf("ERROR : the file %s is not open. \n", fileToOpen);
-        exit(0);
+        *error = 1;
+        return NULL;
     }
     return fd;
 }
 
 void memoAllocationFail(void){
 
-    printf("We have memory allocation error. \n");
+    printf("You have memory allocation error. \n");
     exit(0);
 }
 
-void illegalName(int line){
+void illegalName(int *error, int line){
 
     printf("Error in line : %d\n", line);
-    printf("The name is the name of a register or directive or instruction.\n\n");
+    printf("The label name is the name of a register or directive or instruction command.\n\n");
+    *error = 1;
 }
 
-void doubleLabelName(int line){
+void longLabelName(int *error, int line){
+
+    printf("Error in line : %d\n", line);
+    printf("The label name is longer than 30 characters.\n\n");
+    *error = 1;
+}
+
+void doubleLabelName(int *error, int line){
 
     printf("Error in line : %d\n", line);
     printf("Two different statements about a label with the same label name.\n\n");
+    *error = 1;
 }
 
-void noSpaceOrTab(int line){
+void extraTextContinue(int *error, int line){
 
     printf("Error in line : %d\n", line);
-    printf("There is no space or tab after me before the parameters.\n\n");
+    printf("Extraneous text.\n\n");
+    *error = 1;
 }
 
-void InvalidComma(int line){
+void noSpaceOrTab(int *error, int line){
 
     printf("Error in line : %d\n", line);
-    printf("illegal comma.\n\n");
+    printf("There is no space or tab after command word, before the parameters.\n\n");
+    *error = 1;
 }
 
-void InvalidDataParam(int line){
+void invalidComma(int *error, int line){
 
     printf("Error in line : %d\n", line);
-    printf("Invalid data parameter, you need to put only integers.\n\n");
+    printf("Illegal comma.\n\n");
+    *error = 1;
 }
 
-void multipleCommas(int line){
+void noParam(int * error, int line){
 
     printf("Error in line : %d\n", line);
-    printf("multiple consecutive commas.\n\n");
+    printf("You didn't insert parameters after command word.\n\n");
+    *error = 1;
 }
 
-void multipleCommas(int line){
+void invalidDataParam(int *error, int line){
 
     printf("Error in line : %d\n", line);
-    printf("multiple consecutive commas.\n\n");
+    printf("Invalid data parameter, Only integers preceded by '-' or '+' or nothing are allowed.\n\n");
+    *error = 1;
+}
+
+void invalidString(int *error, int line){
+
+    printf("Error in line : %d\n", line);
+    printf("Invalid string, string must to start with \" and finish with \".\n\n");
+    *error = 1;
+}
+
+void multipleCommas(int *error, int line){
+
+    printf("Error in line : %d\n", line);
+    printf("Multiple consecutive commas.\n\n");
+    *error = 1;
+}
+
+void missingComma(int *error, int line){
+
+    printf("Error in line : %d\n", line);
+    printf("Missing a comma.\n\n");
+    *error = 1;
+}
+
+void irrelevantLabel(int *error, int line){
+
+    printf("Error in line : %d\n", line);
+    printf("Setting a label before .extern or .entry makes the label irrelevant.\n\n");
+    *error = 1;
+}
+
+void undefinedDirCommand(int *error, int line){
+
+    printf("Error in line : %d\n", line);
+    printf("Undefined directive command.\n\n");
+    *error = 1;
+}
+
+void undefinedInstructCommand(int *error, int line){
+
+    printf("Error in line : %d\n", line);
+    printf("Undefined instruction command.\n\n");
+    *error = 1;
+}
+
+void invalidInstParam(int *error, int line){
+
+    printf("Error in line : %d\n", line);
+    printf("Invalid parameter, the parameter can be : register, number or label.\n\n");
+    *error = 1;
+}
+
+void invalidRegisterParam(int *error, int line){
+
+    printf("Error in line : %d\n", line);
+    printf("Invalid parameter of register type, the registers begin with 'r' and after a number from 0 to 7.\n\n");
+    *error = 1;
+}
+
+void invalidNumberParam(int *error, int line){
+
+    printf("Error in line : %d\n", line);
+    printf("Invalid parameter of type number, numbers are defined as follows : start with '#' and \n");
+    printf("can include the symbols '-', '+' and any integer number \n\n");
+    *error = 1;
+}
+
+void labelCannotBeEnt(int *error, int line){
+
+    printf("Error in line : %d\n", line);
+    printf("The label name is defined as external.\n\n");
+    *error = 1;
+}
+
+void noLabelStatement(int *error, int line){
+
+    printf("Error in line : %d\n", line);
+    printf("There is no label statement or the name of the label does \n");
+    printf("not exist in the symbol table.\n\n");
+    *error = 1;
 }
