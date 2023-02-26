@@ -1,0 +1,94 @@
+;errors check - first pass
+
+;line length error
+K2: .string "I am a very long string that will surely exceed the maximum length of a line"
+
+;label errors
+myLabel: .string "This should be fine"
+myLabel: .string "This label was already used on line 7"
+thisIsAveryVeryVeryVeryVeryLongLabel: .data 12, 4, 56, 78, 10
+this label contains spaces in it : mov L1, L1
+r1: .data 1,2,3,4
+mov: jmp Label
+
+;irrelevant label
+customLabel3:.extern Hello
+customLabel4:.entry Goodbye
+
+;undefined directive/instruction command
+K8: .mov #1,label
+someLabel1:
+MOV #-1, r6
+
+;data errors
+.data
+.data --433, 653, 30
+.data 763, 599, ++875, 5
+.data a, b, c, d
+.data 3, 4, 6.5, 9
+
+;string errors
+.string
+.string ab cdef
+.string ab cdef"
+.string "ab cdef
+.string sb "cdef"
+
+;extraneous words
+.extern Hello World
+.entry Goodbye Earth
+mov A, r1, r2
+cmp A, r1, r2
+add A, r0, r1
+sub #3, r1, r5
+lea Label, r3, r4
+clr r2 r6
+inc r1 r4
+dec Count, Mount, 123
+jmp %ROOF, %FLOOR
+bne Bob Sami
+jsr BAT, BEN
+red r3 r5
+prn r1 r2
+
+;comma errors
+.data 4, 8, 1  5 , 16, 23, 42
+myArray: .data ,12,6, -9, , 10
+myArray1: .data 12,     ,    6,-9,10
+mov, r3, K
+cmp K, , #-6
+lea L3  L3
+mov A
+cmp A
+add A
+sub #3
+lea Label
+
+;missing parameter
+clr
+inc
+dec
+jmp
+bne
+jsr
+red
+prn
+.data
+.string
+.extern
+.entry
+
+;invalid number/register
+mov r8 ,r10
+cmp #a , K7
+sub Label, #123
+lea r5 , #23
+
+
+
+
+
+
+
+
+
