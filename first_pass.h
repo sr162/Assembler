@@ -5,7 +5,7 @@
 #include <errno.h>
 
 void first_pass(char *nameOfAsFile, essentials *assem_param, headSymbol *sym, headData *head_data_line, int *error, int *entry_flag, int *external_flag);
-int is_label (headSymbol *sym, char *line, char *name, int *error, int lineCounter, int symbolType);
+int is_label (char *line);
 void save_label_name(char *line, char *label_name);
 int validLabelName(headSymbol *sym, char *labelName, int type, int *error , int lineCounter);
 int check_word(char *line, char *command);
@@ -16,5 +16,3 @@ void checkInstParam(essentials *assem_param, char *line , int *error, int lineCo
 int check_register(char num);
 int check_number(char *line);
 void skipChars(char *line);
-
-void printSymbol(headSymbol *head);

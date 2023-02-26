@@ -57,7 +57,7 @@ void add_data_param(bit_line *bitLine, int num);
 void add_data_line(headData *head_data, int num, int IC);
 bit_line *create_bitLine();
 void initialize_bit_line(bit_line *bitLine);
-int invalidName(char *name, int *error, int lineCounter);
+int invalidName(char *name);
 void free_macroTable(headMacro *list);
 void free_symbolTable(headSymbol *list);
 void free_dataLineTable(headData *list);

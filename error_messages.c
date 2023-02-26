@@ -26,10 +26,26 @@ void memoAllocationFail(void){
     exit(0);
 }
 
-void illegalName(int *error, int line){
+void lineLengthLong(int *error, int line){
 
     printf("Error in line : %d\n", line);
-    printf("The label name is the name of a register or directive or instruction command.\n\n");
+    printf("The line length is longer than 81 characters.\n\n");
+    *error = 1;
+}
+
+void illegalLabelName(int *error, int line){
+
+    printf("Error in line : %d\n", line);
+    printf("The label name is the name of a register or directive or instruction command\n");
+    printf("or the label has characters other than A-Z or a-z or 0-9 \n\n");
+    *error = 1;
+}
+
+void illegalMacroName(int *error, int line){
+
+    printf("Error in line : %d\n", line);
+    printf("The macro name is the name of a register or directive or instruction command\n");
+    printf("or the macro has characters other than A-Z or a-z or 0-9 \n\n");
     *error = 1;
 }
 
@@ -37,6 +53,13 @@ void longLabelName(int *error, int line){
 
     printf("Error in line : %d\n", line);
     printf("The label name is longer than 30 characters.\n\n");
+    *error = 1;
+}
+
+void spaceInLabelStatement(int *error, int line){
+
+    printf("Error in line : %d\n", line);
+    printf("There are spaces in the label statement.\n\n");
     *error = 1;
 }
 
@@ -64,7 +87,7 @@ void noSpaceOrTab(int *error, int line){
 void invalidComma(int *error, int line){
 
     printf("Error in line : %d\n", line);
-    printf("Illegal comma.\n\n");
+    printf("Invalid comma.\n\n");
     *error = 1;
 }
 
@@ -124,10 +147,10 @@ void undefinedInstructCommand(int *error, int line){
     *error = 1;
 }
 
-void invalidInstParam(int *error, int line){
+void IllegalInstParam(int *error, int line){
 
     printf("Error in line : %d\n", line);
-    printf("Invalid parameter, the parameter can be : register, number or label.\n\n");
+    printf("Illegal parameter.\n\n");
     *error = 1;
 }
 
@@ -146,6 +169,14 @@ void invalidNumberParam(int *error, int line){
     *error = 1;
 }
 
+void noLabelStatement(int *error, int line){
+
+    printf("Error in line : %d\n", line);
+    printf("There is no label statement or the name of the label does \n");
+    printf("not exist in the symbol table.\n\n");
+    *error = 1;
+}
+
 void labelCannotBeEnt(int *error, int line){
 
     printf("Error in line : %d\n", line);
@@ -153,10 +184,9 @@ void labelCannotBeEnt(int *error, int line){
     *error = 1;
 }
 
-void noLabelStatement(int *error, int line){
 
-    printf("Error in line : %d\n", line);
-    printf("There is no label statement or the name of the label does \n");
-    printf("not exist in the symbol table.\n\n");
+void exceededDataAmount(int *error){
+
+    printf("ERROR : we have exceeded the maximum amount of data that can be used to run the program.\n\n");
     *error = 1;
 }

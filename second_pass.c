@@ -54,11 +54,12 @@ void second_pass(essentials *assem_param, headSymbol *head_symbol, headData *hea
         if(*ptrLine == ';') \
             continue;
 
-        label_flag = is_label(head_symbol, ptrLine, label_name, error, lineCounter, 0);
+        label_flag = is_label(ptrLine);
 
         if(label_flag) {
 
-            ptrLine += strlen(label_name) + 1; /* pass the label name and the character ':' */
+            save_label_name(ptrLine,label_name);
+            ptrLine += strlen(label_name); /* pass the label name and the character ':' */
             skipSpacesAndTabs(ptrLine);
         }
 
@@ -69,7 +70,7 @@ void second_pass(essentials *assem_param, headSymbol *head_symbol, headData *hea
 
                 ptrLine += 6;
                 skipSpacesAndTabs(ptrLine);
-                save_label_name(ptrLine, label_name);
+                save_symbol(ptrLine, label_name);
 
                 if(exists_label(head_symbol, label_name, 1, error, lineCounter)) /* check if the label name exists in the symbol table */
                     put_in_ent_file(ent_file, head_symbol, label_name, lineCounter, error);
@@ -125,7 +126,7 @@ void second_pass(essentials *assem_param, headSymbol *head_symbol, headData *hea
             continue;
 
 
-        /* instruction command with 1 operand: "mov", "cmp", "add", "sub", "lea" */
+        /* instruction command with 2 operand: "mov", "cmp", "add", "sub", "lea" */
         for(i = 0 ; i < OP2_LENGTH ; i++){
 
             if(check_word(ptrLine, op2[i])){
@@ -140,6 +141,20 @@ void second_pass(essentials *assem_param, headSymbol *head_symbol, headData *hea
         if(op2_flag)
             continue;
     }
+
+    if(assem_param->IC - 100 > DATA_LENGTH){
+
+        exceededDataAmount(error);
+    }
+
+    fclose(as_file);
+    fclose(obj_file);
+
+    if(ext_flag)
+        fclose(ext_file);
+
+    if(ent_flag)
+        fclose(ent_file);
 }
 
 
@@ -163,6 +178,7 @@ int exists_label(headSymbol *symbol_head, char *label_name, int type, int *error
 
         tmp = tmp->next;
     }
+
     noLabelStatement(error, lineCounter);
     return 0;
 }
@@ -201,7 +217,7 @@ void put_in_ext_file(FILE *extfile, char *label_name, int IC){
 
 }
 
-
+/* adds the relevant data line as a bit line to the object file */
 void print_data_line(FILE *obj_file, essentials *assem_param, headData *head_data, int current_IC){
 
     data_table *tmp = head_data->head;
@@ -217,8 +233,28 @@ void print_data_line(FILE *obj_file, essentials *assem_param, headData *head_dat
     }
 }
 
+/* save the symbol name in the label name */
+void save_symbol(char *line, char *label_name){
 
-/* reads and checks who is the only operand */
+    int i = 0;
+
+    for(i = 0 ; line[i] != '\n' && line[i] != '\0' && line[i] != '\t' && line[i] != ' ' && line[i] != ':' && line[i] != ')' && line[i] != ',' && i < SYMBOL_LENGTH ; i++){
+
+        label_name[i] = line[i];
+
+        if(line[i] == '('){
+
+            label_name[i+1] = '\0';
+            return;
+        }
+    }
+
+    label_name[i] = '\0';
+}
+
+/* reads who is the only operand and check if the label name exist in the symbol table *
+ * if it is a jump address check the first label name and the two operands in the "( )" *
+ * adds the special bit line to the object file */
 void read_op1(FILE *obj_file, FILE *ext_file, essentials *assem_param, headSymbol *head_symbol, char *ptrLine, int ind_instruction, int *error, int lineCounter){
 
     enum{not = 0, clr, inc, dec, jmp, bne, red, prn, jsr};
@@ -312,12 +348,11 @@ void read_op1(FILE *obj_file, FILE *ext_file, essentials *assem_param, headSymbo
 
     else {
 
-        save_label_name(ptrLine, label_name);
+        save_symbol(ptrLine, label_name);
         jump_label(label_name, &jump_address_flag);
 
         if (!exists_label(head_symbol, label_name, 0, error, lineCounter)) {
 
-            noLabelStatement(error, lineCounter);
             free(tmpLine);
             return;
         }
@@ -413,13 +448,10 @@ void read_op1(FILE *obj_file, FILE *ext_file, essentials *assem_param, headSymbo
 
                 else {
 
-                    save_label_name(ptrLine, label_name);
-                    if(label_name[strlen(label_name)-1] == ',' || label_name[strlen(label_name)-1] == ')')
-                        label_name[strlen(label_name)-1] = '\0';
+                    save_symbol(ptrLine, label_name);
 
                     if (!exists_label(head_symbol, label_name, 0, error, lineCounter)) {
 
-                        noLabelStatement(error, lineCounter);
                         free(tmpLine);
                         free(secondLine);
                         free(thirdLine);
@@ -454,7 +486,7 @@ void read_op1(FILE *obj_file, FILE *ext_file, essentials *assem_param, headSymbo
 
                     if(ext_flag) {
 
-                        put_in_ext_file(ext_file, label_name, assem_param->IC);
+                        put_in_ext_file(ext_file, label_name, assem_param->IC + 2);
                         ext_flag = 0;
                     }
 
@@ -486,7 +518,8 @@ void read_op1(FILE *obj_file, FILE *ext_file, essentials *assem_param, headSymbo
 }
 
 
-/* reads and checks who the two operands are */
+/* reads the two operands are and check if the label name exist in the symbol table *
+ * adds the special bit line to the object file */
 void read_op2(FILE *obj_file, FILE *ext_file, essentials *assem_param, headSymbol *head_symbol, char *ptrLine, int ind_instruction, int *error, int lineCounter) {
 
     enum {mov = 0, cmp, add, sub, lea};
@@ -600,13 +633,10 @@ void read_op2(FILE *obj_file, FILE *ext_file, essentials *assem_param, headSymbo
 
         else {
 
-            save_label_name(ptrLine, label_name);
-            if(label_name[strlen(label_name)-1] == ',')
-                label_name[strlen(label_name)-1] = '\0';
+            save_symbol(ptrLine, label_name);
 
             if (!exists_label(head_symbol, label_name, 0, error, lineCounter)) {
 
-                noLabelStatement(error, lineCounter);
                 free(firstLine);
                 free(tmpLine);
                 return;
@@ -640,7 +670,7 @@ void read_op2(FILE *obj_file, FILE *ext_file, essentials *assem_param, headSymbo
 
             if(ext_flag) {
 
-                put_in_ext_file(ext_file, label_name, assem_param->IC);
+                put_in_ext_file(ext_file, label_name, assem_param->IC + 1);
                 ext_flag = 0;
             }
 

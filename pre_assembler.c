@@ -34,7 +34,7 @@ void places_macros(char *nameOfAmFile, char *nameOfAsFile, int *error){
             ptrLine += 3;
             removeAllSpaces(ptrLine); /* we want only the name of the macro */
 
-            if (!invalidName(ptrLine ,error, lineCounter)){
+            if (!invalidName(ptrLine)){
 
                 inMcr = 1;
                 skipMcr = 1;
@@ -45,6 +45,9 @@ void places_macros(char *nameOfAmFile, char *nameOfAsFile, int *error){
                 strcpy(mcr_name, ptrLine);
                 continue;
             }
+
+             illegalMacroName(error, lineCounter);
+             continue;
         }
 
         /* we get to the end of the macro */
@@ -81,18 +84,6 @@ void places_macros(char *nameOfAmFile, char *nameOfAsFile, int *error){
     fclose(asFile);
 }
 
-void printMacro(headMacro *head){
-
-    macroTable *tmp = head->head;
-    if(tmp == NULL)
-        printf("NULL\n");
-    while(tmp != NULL){
-
-        printf("%s, %d, %d\n", tmp->mcrName, tmp->numOfLines, tmp->pos_of_firstMcrLine);
-        tmp = tmp->next;
-    }
-
-}
 
 /* check if we get to macro block */
 int checkWord (char *line, char *word){

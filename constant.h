@@ -6,8 +6,8 @@
 #include <stdlib.h>
 #include "ctype.h"
 
-#define DATA_LENGTH 256
-#define LINE_LENGTH  81
+#define DATA_LENGTH 255
+#define LINE_LENGTH  82
 #define SYMBOL_LENGTH 31
 #define MAX_LENGTH_TYPE 9
 #define LEN_DIRECTIVES 4

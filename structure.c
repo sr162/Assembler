@@ -178,7 +178,7 @@ void initialize_bit_line(bit_line *bitLine){
 
 
 /* check if the name is instruction or guidance or register name, else return false */
-int invalidName(char *name, int*error, int lineCounter){
+int invalidName(char *name){
 
     int i ;
     /* name of instructors, directives and registers */
@@ -188,29 +188,20 @@ int invalidName(char *name, int*error, int lineCounter){
 
     for (i = 0 ; i < LEN_INSTRUCTIONS ; i++){
 
-        if(!strcmp(name, instructions[i])) {
-
-            illegalName(error, lineCounter);
+        if(!strcmp(name, instructions[i]))
             return 1;
-        }
     }
 
     for (i = 0 ; i < LEN_DIRECTIVES ; i++){
 
-        if(!strcmp(name, directives[i])) {
-
-            illegalName(error, lineCounter);
+        if(!strcmp(name, directives[i]))
             return 1;
-        }
     }
 
     for (i = 0 ; i < LEN_REGISTERS; i++){
 
-        if(!strcmp(name, registers[i])) {
-
-            illegalName(error, lineCounter);
+        if(!strcmp(name, registers[i]))
             return 1;
-        }
     }
 
     return 0;

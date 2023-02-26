@@ -26,22 +26,42 @@ void first_pass(char *nameOfAsFile, essentials *assem_param, headSymbol *sym, he
             continue;
 
         /* if it is a comment line we skip */
-        if (*ptrLine == ';') \
-
+        if (*ptrLine == ';')
             continue;
 
-        label_flag = is_label(sym, ptrLine, label_name, error, lineCounter, 0); /* if the name is valid we point on it with ptr_label and return 1 */
+        if(strlen(ptrLine) == LINE_LENGTH-1){
 
-        if (label_flag) {
+            lineLengthLong(error, lineCounter);
 
-            if (validLabelName(sym, label_name, 1, error, lineCounter)) {
+            while(strlen(ptrLine) == LINE_LENGTH-1) { /* we will go through the entire line before moving on to the next line in the file */
 
-                ptrLine += strlen(label_name) + 1; /* point after the label name and the ':' */
-                skipSpacesAndTabs(ptrLine);
+                if (fgets(line, LINE_LENGTH, asFile) == NULL) {
+
+                    fclose(asFile);
+                    return;
+                }
             }
 
-            else
+            continue;
+        }
+
+        label_flag = is_label(ptrLine); /* if the name is valid we point on it with ptr_label and return 1 */
+
+        if(label_flag == -1){
+
+            spaceInLabelStatement(error, lineCounter);
+            continue;
+        }
+
+        if (label_flag == 1) {
+
+            save_label_name(ptrLine, label_name);
+
+            if (!validLabelName(sym, label_name, 1, error, lineCounter))
                 continue;
+
+            ptrLine += strlen(label_name) + 1; /* point after the label name and the ':' */
+            skipSpacesAndTabs(ptrLine);
         }
 
         if (*ptrLine == '.') { /* the start of the data, string, extern, entry directive command */
@@ -81,6 +101,13 @@ void first_pass(char *nameOfAsFile, essentials *assem_param, headSymbol *sym, he
                 }
 
                 skipSpacesAndTabs(ptrLine);
+
+                if (*ptrLine == '\n' || *ptrLine == '\0') {
+
+                    noLabelStatement(error, lineCounter);
+                    continue;
+                }
+
                 skipChars(ptrLine); /* skip the label name */
                 skipSpacesAndTabs(ptrLine);
 
@@ -98,11 +125,18 @@ void first_pass(char *nameOfAsFile, essentials *assem_param, headSymbol *sym, he
                 *external_flag = 1;
                 strcpy(label_type, "ext");
                 ptrLine += 7;
-                skipSpacesAndTabs(ptrLine);
 
                 if (label_flag) { /* if we pass a label name before .extern */
 
                     irrelevantLabel(error, lineCounter);
+                    continue;
+                }
+
+                skipSpacesAndTabs(ptrLine);
+
+                if (*ptrLine == '\n' || *ptrLine == '\0') {
+
+                    noLabelStatement(error, lineCounter);
                     continue;
                 }
 
@@ -122,6 +156,7 @@ void first_pass(char *nameOfAsFile, essentials *assem_param, headSymbol *sym, he
                     add_to_symbolTable(sym, label_name, label_type, 0);
                     continue;
                 }
+                continue;
             }
 
             else { /* the word from the text file start with '.' but it is not a directive command */
@@ -141,35 +176,34 @@ void first_pass(char *nameOfAsFile, essentials *assem_param, headSymbol *sym, he
 
         readingInstruction(assem_param, head_data_line, ptrLine, error, lineCounter);
     }
-
     fclose(asFile);
 }
 
-void printSymbol(headSymbol *head){
-
-    symbolTable *tmp = head->head;
-    while(tmp != NULL){
-
-        printf("%s, %s, %d\n", tmp->symName, tmp->sign, tmp->value);
-        tmp = tmp->next;
-    }
-
-}
 
 /* check if we have reached a declaration of a valid symbol according to the symbol type */
-int is_label (headSymbol *sym, char *line, char *labelName, int *error, int lineCounter, int symbolType){
+int is_label (char *line){
 
     int i = 0;
+    int space_flag = 0;
 
-    while(line[i] != '\n' && line[i] != '\0' && line[i] != ' ' && line[i] != '\t'){ /* check if there is ':' in label name */
+    for(i = 0 ; line[i] != '\n' && line[i] != '\0' ; i++){ /* check if there is ':' in label name */
 
         if(line[i] == ':'){
 
-            save_label_name(line, labelName);
+            if(space_flag)
+                return -1;
+
             return 1;
         }
 
-        i++;
+         if(line[i] == ' ' || line[i] == '\t') {
+
+             space_flag = 1;
+             continue;
+         }
+
+        if(!((line[i] >= 'A' && line[i] <= 'Z') || (line[i] >= 'a' && line[i] <= 'z') || (line[i] >= '0' && line[i] <= '9')))
+            return 0;
     }
 
     return 0;
@@ -187,6 +221,7 @@ void save_label_name(char *line, char *label_name){
 
         if(line[i] == ':' || line[i] == ')' || line[i] == ',' ){
 
+            label_name[i] = line[i];
             label_name[i+1] = '\0';
             return;
         }
@@ -203,6 +238,7 @@ int validLabelName(headSymbol *sym, char *labelName, int type, int *error , int 
 
     symbolTable  *tmp = sym->head;
     int len = strlen(labelName);
+    int i = 0;
 
     if (labelName[0] == ' '){
 
@@ -210,27 +246,35 @@ int validLabelName(headSymbol *sym, char *labelName, int type, int *error , int 
         return 0;
     }
 
-    if(len == 0){
+    if(type) {/* equal to 1 if the label end with ':' */
 
-        noLabelStatement(error, lineCounter);
+        labelName[len - 1] = '\0';
+        len--;
+    }
+
+    for (i = 0; i < len ; i++) {
+
+        if(labelName[i] == ' ' || labelName[i] == '\t'){
+
+            extraTextContinue(error, lineCounter);
+            return 0;
+        }
+
+        if(!((labelName[i] >= 'A' && labelName[i] <= 'Z') || (labelName[i] >= 'a' && labelName[i] <= 'z') || (labelName[i] >= '0' && labelName[i] <= '9'))) {
+
+            illegalLabelName(error, lineCounter);
+            return 0;
+        }
+    }
+
+    if(invalidName(labelName)) { /* check if the name of the label is register name or instruction or directive command or if not exists label name */
+
+        illegalLabelName(error, lineCounter);
         return 0;
     }
 
-    if(labelName[len-1] != ':' && type)
-        return 0;
-
-    if(type)
-        labelName[len-1] = '\0';
-    else
-        labelName[len] = '\0';
-
-    if(invalidName(labelName, error, lineCounter)) /* check if the name of the label is register name or instruction or directive command or if not exists label name */
-        return 0;
-
-    if (!sym->head)
+    if (!tmp)
         return 1;
-
-    tmp = sym->head;
 
     while(tmp != NULL) { /* check all the names in the table of label name  */
 
@@ -258,11 +302,12 @@ int check_word(char *line, char *command){
     while(line[i] && line[i] != ',' && line[i] != ' ' && line[i] != '\t' && line[i] != '\n')
         i++;
 
-    if(strlen(command) < i)
+    if(strlen(command) != i)
         return 0;
 
     if(!strncmp(command, line, i))
         return 1;
+
 
     return 0;
 }
@@ -440,7 +485,7 @@ void readingInstruction(essentials *assem_param, headData *head_data, char *line
     int i = 0;
     int instructInd = -1;
     /* name of instructors */
-    char *instructions [LEN_INSTRUCTIONS] = {"mov", "cmp", "add", "sub", "lea", "not", "clr", "inc", "dec", "jmp", "bne", "red", "prn", "jsr", "rts", "stop"};
+    char *instructions [LEN_INSTRUCTIONS] = {"mov", "cmp", "add", "sub", "not", "clr", "lea", "inc", "dec", "jmp", "bne", "red", "prn", "jsr", "rts", "stop"};
 
     for (i = 0; i < LEN_INSTRUCTIONS; i++) {
 
@@ -459,7 +504,7 @@ void readingInstruction(essentials *assem_param, headData *head_data, char *line
 
     line += strlen(instructions[i]); /* pass the instruction command */
 
-    if(*line != ' ' && *line != '\t' && *line != '\n'){
+    if(*line != ' ' && *line != '\t' && *line != '\n' && *line != '\0'){
 
         noSpaceOrTab(error, lineCounter); /* error message */
         return;
@@ -501,9 +546,9 @@ void checkInstParam(essentials *assem_param, char *line , int *error, int lineCo
         return;
     }
 
-    if(instructInd == 5 || 6 < instructInd){
+    if(3 < instructInd && instructInd != 6){
 
-        if (*line == 'r') { /* first parameter in the jump address is register or label name */
+        if (*line == 'r') { /* check if the first parameter is a register or label name */
 
             if (check_register(line[1]) == -2) {
 
@@ -526,19 +571,27 @@ void checkInstParam(essentials *assem_param, char *line , int *error, int lineCo
 
         else if (*line == '#') { /* the parameter is a number */
 
+            line++;
+
             if (!check_number(line)) {
 
                 invalidNumberParam(error, lineCounter); /* error message */
                 return;
             }
 
-            assem_param->IC += 2;
-            skipChars(line);
-            skipSpacesAndTabs(line);
+            if(instructInd == 12) { /* number can be a destination operand only in prn command */
 
-            if (*line != '\n' && *line != '\0')
-                extraTextContinue(error, lineCounter);
+                assem_param->IC += 2;
+                skipChars(line);
+                skipSpacesAndTabs(line);
 
+                if (*line != '\n' && *line != '\0')
+                    extraTextContinue(error, lineCounter);
+
+                return;
+            }
+
+            IllegalInstParam(error, lineCounter);
             return;
         }
 
@@ -590,6 +643,8 @@ void checkInstParam(essentials *assem_param, char *line , int *error, int lineCo
                     }
 
                     else if (*line == '#') { /* the parameter is a number */
+
+                        line++;
 
                         if (!check_number(line)) {
 
@@ -660,7 +715,7 @@ void checkInstParam(essentials *assem_param, char *line , int *error, int lineCo
 
                 if (jumpAddress) { /* if we have '(' in the label name */
 
-                    invalidInstParam(error, lineCounter); /* error message */
+                    illegalLabelName(error, lineCounter); /* error message */
                     return;
                 }
 
@@ -682,7 +737,8 @@ void checkInstParam(essentials *assem_param, char *line , int *error, int lineCo
 
             if (*line == 'r') {
 
-                if (check_register(line[i]) == -2) {
+                if (check_register(line[1]) == -2) {
+
 
                     invalidRegisterParam(error, lineCounter); /* error message */
                     return;
@@ -703,6 +759,12 @@ void checkInstParam(essentials *assem_param, char *line , int *error, int lineCo
                         break;
                     }
 
+                    if(instructInd == 6){ /* register cant be source operand in lea command */
+
+                        IllegalInstParam(error, lineCounter);
+                        return;
+                    }
+
                     regi = 1;
                     skipChars(line);
                     skipSpacesAndTabs(line);
@@ -710,6 +772,8 @@ void checkInstParam(essentials *assem_param, char *line , int *error, int lineCo
             }
 
             else if (*line == '#') { /* the parameter is a number */
+
+                line++;
 
                 if (!check_number(line)) {
 
@@ -719,10 +783,22 @@ void checkInstParam(essentials *assem_param, char *line , int *error, int lineCo
 
                 if (regi || passParam) {
 
+                    if(instructInd != 1){ /* number can be a destination operand only in cmp command */
+
+                        IllegalInstParam(error, lineCounter);
+                        return;
+                    }
+
                     assem_param->IC += 3;
                     skipChars(line);
                     skipSpacesAndTabs(line);
                     break;
+                }
+
+                if(instructInd == 6){ /* number cant be source operand in lea command */
+
+                    IllegalInstParam(error, lineCounter);
+                    return;
                 }
 
                 passParam = 1;
@@ -799,7 +875,7 @@ int check_register(char num){
 /* check if the parameter is valid number */
 int check_number(char *line){
 
-    int i = 1;
+    int i = 0;
 
     if(line[i] == '-' || line[i] == '+')
         i++;

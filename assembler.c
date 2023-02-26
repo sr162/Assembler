@@ -1,13 +1,28 @@
-#include "first_pass.h"
-#include "second_pass.h"
-#include "structure.h"
+#include "assembler.h"
+
+
+/* main function */
+int main(int args, char * arguv[]){
+
+    int i;
+    checkNumOfArgu(args);
+
+    for (i = 1; i < args ; i++){
+        assembler_process(arguv[i]);
+    }
+
+    return 0;
+}
+
 
 /* change the ending of the file name */
 void changeNameFile (char *newNameFile, char *nameFile, char *endName){
 
-    sprintf(newNameFile, "%s%s.txt", endName, nameFile);
+    sprintf(newNameFile, "%s.%s", nameFile, endName);
 }
 
+
+/* manages the transitions and runs the program and there is an error and exits the program */
 void assembler_process(char * nameOfFile){
 
     essentials *assem_param;
@@ -31,15 +46,12 @@ void assembler_process(char * nameOfFile){
 
         printf("The program ended, an error was found in the pre-assembler.\n");
         remove(nameOfAsFile);
-        remove(nameOfAmFile);
         return;
     }
 
     assem_param = createEssentials();  /* initialize IC to 100 and DC to 0 */
     head_data = createDataTable();
     head_symbol = createSymbolTable();
-
-
 
     first_pass(nameOfAsFile, assem_param, head_symbol, head_data, &error, &entry_flag, &external_flag); /* updates symbol table and a first search for errors in the file */
 
@@ -49,7 +61,7 @@ void assembler_process(char * nameOfFile){
        free_dataLineTable(head_data);
        free(assem_param);
        remove(nameOfAsFile);
-       remove(nameOfAmFile);
+
        printf("The program ended, an error was found in the first pass over the file.\n");
        return;
     }
@@ -66,34 +78,21 @@ void assembler_process(char * nameOfFile){
     if(error){
 
         remove(nameOfAsFile);
-        remove(nameOfEntFile);
-        remove(nameOfEntFile);
         remove(nameOfObjFile);
+
+        if(external_flag)
+            remove(nameOfExtFile);
+        if(entry_flag)
+            remove(nameOfEntFile);
+
         printf("The program ended, an error was found in the second pass over the file.\n");
         exit(0);
     }
 
-    if(!external_flag)
-        remove(nameOfExtFile);
-
-    if(!entry_flag)
-        remove(nameOfEntFile);
-
-    printf("finish.\n");
+    printf("finished the assembler program for the file: %s .\n", nameOfAmFile);
 
 }
 
 
-int main(int args, char * arguv[]){
-
-    int i;
-    checkNumOfArgu(args);
-
-    for (i = 1; i < args ; i++){
-        assembler_process(arguv[i]);
-    }
-
-    return 0;
-}
 
 
