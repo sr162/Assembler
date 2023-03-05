@@ -29,29 +29,29 @@ void places_macros(char *nameOfAmFile, char *nameOfAsFile, int *error){
 
         skipSpacesAndTabs(ptrLine);
         /* we check if we get to macro block */
-         if (checkWord (ptrLine, "mcr")) {
+         if (check_word (ptrLine, "mcr")) {
 
             ptrLine += 3;
             removeAllSpaces(ptrLine); /* we want only the name of the macro */
 
-            if (!invalidName(ptrLine)){
+            if(invalidName(ptrLine)){
 
-                inMcr = 1;
-                skipMcr = 1;
-
-                if (posFirstLineOfMcr == -1)
-                    posFirstLineOfMcr = (int) ftell(amFile); /* save the position of the file pointer from the beginning of the file to the first line of the macro  */
-
-                strcpy(mcr_name, ptrLine);
+                illegalMacroName(error, lineCounter);
                 continue;
             }
 
-             illegalMacroName(error, lineCounter);
+             inMcr = 1;
+             skipMcr = 1;
+
+             if (posFirstLineOfMcr == -1)
+                 posFirstLineOfMcr = (int) ftell(amFile); /* save the position of the file pointer from the beginning of the file to the first line of the macro  */
+
+             strcpy(mcr_name, ptrLine);
              continue;
         }
 
         /* we get to the end of the macro */
-        if (checkWord (ptrLine, "endmcr") && inMcr) {
+        if (check_word (ptrLine, "endmcr") && inMcr) {
 
             inMcr = 0;
             add_to_mcrTable(mcr, mcr_name, posFirstLineOfMcr, countMacroLines);
@@ -85,26 +85,19 @@ void places_macros(char *nameOfAmFile, char *nameOfAsFile, int *error){
 }
 
 
-/* check if we get to macro block */
-int checkWord (char *line, char *word){
+/* Checks whether we have reached the word we are looking for */
+int check_word(char *line, char *word){
 
     int i = 0;
-    int letterCounter = 0;
-    int lenWord = strlen(word);
 
-    while((line[i] >= 'A' && line[i] <= 'Z') || (line[i] >= 'a' && line[i] <= 'z') || (line[i] >= '0' && line[i] <= '9') || line[i] == '#' || line[i] == '.' ){
-
-        letterCounter++;
+    while(line[i] && line[i] != ',' && line[i] != ' ' && line[i] != '\t' && line[i] != '\n')
         i++;
-    }
 
-    if(lenWord != letterCounter)
+    if(strlen(word) != i)
         return 0;
 
-
-    if(strncmp(line, word, letterCounter) == 0)
+    if(!strncmp(word, line, i))
         return 1;
-
 
     return 0;
 }
@@ -138,7 +131,7 @@ void removeAllSpaces(char *p) {
 }
 
 
-/* check if we get to macro name after we past the block of this macro */
+/* check if we reach to macro name after we past the block of this macro */
 int it_is_mcrName(headMacro *mcr, char *line, FILE *asFile, FILE *source){
 
     int i = 0;
@@ -147,7 +140,7 @@ int it_is_mcrName(headMacro *mcr, char *line, FILE *asFile, FILE *source){
 
     while(tmp != NULL){
 
-        if(checkWord(line, tmp->mcrName)){
+        if(check_word(line, tmp->mcrName)){
 
             fseek(source, tmp->pos_of_firstMcrLine, SEEK_SET); /* we point with the file pointer to the start of the macro first line */
 
@@ -160,6 +153,36 @@ int it_is_mcrName(headMacro *mcr, char *line, FILE *asFile, FILE *source){
             return 1;
         }
         tmp = tmp->next;
+    }
+
+    return 0;
+}
+
+/* check if the name is instruction or guidance or register name, else return false */
+int invalidName(char *name){
+
+    int i = 0;
+    /* name of instructors, directives and registers */
+    char *directives [LEN_DIRECTIVES] = {".data", ".string", ".entry", ".extern"};
+    char *instructions [LEN_INSTRUCTIONS] = {"mov", "cmp", "add", "sub", "lea", "not", "clr", "inc", "dec", "jmp", "bne", "red", "prn", "jsr", "rts", "stop"};
+    char *registers[LEN_REGISTERS] = {"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7"};
+
+    for (i = 0 ; i < LEN_INSTRUCTIONS ; i++){
+
+        if(!strcmp(name, instructions[i]))
+            return 1;
+    }
+
+    for (i = 0 ; i < LEN_DIRECTIVES ; i++){
+
+        if(!strcmp(name, directives[i]))
+            return 1;
+    }
+
+    for (i = 0 ; i < LEN_REGISTERS; i++){
+
+        if(!strcmp(name, registers[i]))
+            return 1;
     }
 
     return 0;

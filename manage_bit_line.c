@@ -1,5 +1,6 @@
 #include "manage_bit_line.h"
 
+/* Adding the classification to the bit line */
 void add_classify(bit_line *bitLine, int which_classify){
 
     int i = 0;
@@ -19,7 +20,7 @@ void add_classify(bit_line *bitLine, int which_classify){
     }
 }
 
-
+/* Adding the value of the instruction to the bit line */
 void add_opcode(int instNum, bit_line *bitLine){
 
     int i = 6; /* the opcode bit are 6 - 9 in extras */
@@ -92,7 +93,7 @@ void add_opcode(int instNum, bit_line *bitLine){
 }
 
 /* relevant in the case of a jump address *
- * change the relevant bit (8 - 11) depending on the parameters */
+ * change the relevant bit (10 - 13) depending on the parameters */
 void add_param(int param, int which_param, bit_line *bitLine){
 
     int i = 0;
@@ -117,7 +118,7 @@ void add_param(int param, int which_param, bit_line *bitLine){
     }
 }
 
-/* change the relevant bit (0 - 3) depending on the parameters */
+/* change the relevant bit (2 - 5) depending on the parameters */
 void add_address(int which_operand, int which_address, bit_line *bitLine){
 
     int i = 0;
@@ -147,23 +148,28 @@ void add_address(int which_operand, int which_address, bit_line *bitLine){
     }
 }
 
-
+/* Adding the IC value of the label to the bit line *
+ * if the label is external we will change the value of the external flag to 1 */
 void add_label_bit_line(headSymbol *head_symbol, bit_line *bitLine, char *label_name, int *ext_flag){
 
     symbolTable *tmp = head_symbol->head;
     int which_classify = 2; /* R - relocatable */
+    int lenLabel = strlen(label_name);
 
     while (tmp != NULL){
 
-        if(!strcmp(tmp->symName, label_name)){
+        if(strlen(tmp->symName) == lenLabel) {
 
-            if(!strcmp(tmp->sign, "ext")){
+            if (!strcmp(tmp->symName, label_name)) {
 
-                which_classify = 1; /* E - external */
-                *ext_flag = 1;
+                if (!strcmp(tmp->sign, "ext")) {
+
+                    which_classify = 1; /* E - external */
+                    *ext_flag = 1;
+                }
+
+                break;
             }
-
-            break;
         }
 
         tmp = tmp->next;
@@ -173,7 +179,7 @@ void add_label_bit_line(headSymbol *head_symbol, bit_line *bitLine, char *label_
     add_number_bit_line(bitLine, tmp->value);
 }
 
-
+/* Adding the number of the register to the bit line */
 void add_register_bit_line(bit_line *bitLine, int regiNum, int which_param){
 
     int i = 0 ;
@@ -218,7 +224,7 @@ void add_register_bit_line(bit_line *bitLine, int regiNum, int which_param){
     }
 }
 
-
+/* Adding the number to the bit line */
 void add_number_bit_line(bit_line *bitLine, int num){
 
     int i = 2;
@@ -230,7 +236,7 @@ void add_number_bit_line(bit_line *bitLine, int num){
     }
 }
 
-
+/* Writing the special bit line and the necessary values in the object file */
 void print_obj_file(FILE *obj_file, essentials *assem_param, bit_line *tmpLine){
 
     char bit_line_string[14] = {'\0'};
@@ -239,7 +245,7 @@ void print_obj_file(FILE *obj_file, essentials *assem_param, bit_line *tmpLine){
 }
 
 
-/* converts the string of bits into a unique code */
+/* converts the string of bits into a special code */
 void converts_bit_line(bit_line *bitLine, char bit_line_string[14]){
 
     int i = 0, j = 13;

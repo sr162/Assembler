@@ -80,7 +80,7 @@ void extraTextContinue(int *error, int line){
 void noSpaceOrTab(int *error, int line){
 
     printf("Error in line : %d\n", line);
-    printf("There is no space or tab after command word, before the parameters.\n\n");
+    printf("There is no space or tab before the parameters.\n\n");
     *error = 1;
 }
 

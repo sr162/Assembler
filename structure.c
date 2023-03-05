@@ -1,6 +1,6 @@
 #include "structure.h"
 
-/* in this function we allocate memory to head of the list of macros */
+/* Allocation of memory to the head of the macro list */
 headMacro *createMacroTable(){
 
     headMacro *list = malloc(sizeof(headMacro));
@@ -13,7 +13,7 @@ headMacro *createMacroTable(){
     return list;
 }
 
-/* in this function we allocate memory to head of the list of symbols */
+/* Allocation of memory to the head of the symbol list */
 headSymbol *createSymbolTable(){
 
     headSymbol *list = malloc(sizeof(headSymbol));
@@ -26,8 +26,7 @@ headSymbol *createSymbolTable(){
     return list;
 }
 
-
-/* in this function we allocate memory to head of the list of data lines */
+/* Allocation of memory to the head of the data line list */
 headData *createDataTable(){
 
     headData *list = malloc(sizeof(headData));
@@ -41,7 +40,7 @@ headData *createDataTable(){
 }
 
 
-/* in this function we allocate memory for the essential variables: IC, DC */
+/* Allocation of memory to the variables of essentials */
 essentials *createEssentials(){
 
     essentials *assem_param = malloc(sizeof(essentials));
@@ -58,7 +57,7 @@ essentials *createEssentials(){
 
 
 
-/* if we do not have an allocation error we put all the data of the macro in the macro table, else we return error */
+/* We place the data we collected inside the macro table */
 void add_to_mcrTable(headMacro *headMcr, char name[LINE_LENGTH], int posFirstLine, int linesAmount){
 
     macroTable *p = malloc(sizeof(macroTable));
@@ -86,7 +85,7 @@ void add_to_mcrTable(headMacro *headMcr, char name[LINE_LENGTH], int posFirstLin
 }
 
 
-/* if we do not have an allocation error we put all the symbol parameters in the symbol table, else we return error */
+/* We place the data we collected inside the symbol table */
 void add_to_symbolTable(headSymbol * sym, char * labelName, char * type, int IC){
 
     symbolTable *p = malloc(sizeof(symbolTable));
@@ -115,7 +114,7 @@ void add_to_symbolTable(headSymbol * sym, char * labelName, char * type, int IC)
     }
 }
 
-
+/* Place the data or string parameter value in the bit line */
 void add_data_param(bit_line *bitLine, int num){
 
     int i = 0;
@@ -127,8 +126,7 @@ void add_data_param(bit_line *bitLine, int num){
     }
 }
 
-
-/* if we do not have an allocation error we put all the data line parameters in the data line table, else we return error */
+/* We place the data we collected inside the data line table */
 void add_data_line(headData *head_data, int num, int IC){
 
     data_table *p = malloc(sizeof(data_table));
@@ -156,8 +154,7 @@ void add_data_line(headData *head_data, int num, int IC){
     }
 }
 
-
-/* if we do not have an allocation error initialize all the data line parameters and return a pointer to this line */
+/* Allocate memory to new bit line and return it */
 bit_line *create_bitLine(){
 
     bit_line *p = malloc(sizeof(bit_line));
@@ -170,44 +167,13 @@ bit_line *create_bitLine(){
     return p;
 }
 
+/* Initializing the bit line to zero */
 void initialize_bit_line(bit_line *bitLine){
 
     bitLine->param = 0;
 }
 
-
-
-/* check if the name is instruction or guidance or register name, else return false */
-int invalidName(char *name){
-
-    int i ;
-    /* name of instructors, directives and registers */
-    char *directives [LEN_DIRECTIVES] = {".data", ".string", ".entry", ".extern"};
-    char *instructions [LEN_INSTRUCTIONS] = {"mov", "cmp", "add", "sub", "lea", "not", "clr", "inc", "dec", "jmp", "bne", "red", "prn", "jsr", "rts", "stop"};
-    char *registers[LEN_REGISTERS] = {"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7"};
-
-    for (i = 0 ; i < LEN_INSTRUCTIONS ; i++){
-
-        if(!strcmp(name, instructions[i]))
-            return 1;
-    }
-
-    for (i = 0 ; i < LEN_DIRECTIVES ; i++){
-
-        if(!strcmp(name, directives[i]))
-            return 1;
-    }
-
-    for (i = 0 ; i < LEN_REGISTERS; i++){
-
-        if(!strcmp(name, registers[i]))
-            return 1;
-    }
-
-    return 0;
-}
-
-
+/* Freeing memory of the macro table */
 void free_macroTable(headMacro *list){
 
     macroTable *tmp = list->head;
@@ -222,6 +188,7 @@ void free_macroTable(headMacro *list){
     free(list);
 }
 
+/* Freeing memory of the symbol table */
 void free_symbolTable(headSymbol *list){
 
     symbolTable *tmp = list->head;
@@ -236,6 +203,7 @@ void free_symbolTable(headSymbol *list){
     free(list);
 }
 
+/* Freeing memory of the data line table */
 void free_dataLineTable(headData *list){
 
     data_table *tmp = list->head;

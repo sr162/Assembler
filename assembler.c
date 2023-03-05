@@ -1,6 +1,5 @@
 #include "assembler.h"
 
-
 /* main function */
 int main(int args, char * arguv[]){
 
@@ -14,15 +13,7 @@ int main(int args, char * arguv[]){
     return 0;
 }
 
-
-/* change the ending of the file name */
-void changeNameFile (char *newNameFile, char *nameFile, char *endName){
-
-    sprintf(newNameFile, "%s.%s", nameFile, endName);
-}
-
-
-/* manages the transitions and runs the program and there is an error and exits the program */
+/* Manages the transitions on the file and ends the program if there is an error in one of the transitions */
 void assembler_process(char * nameOfFile){
 
     essentials *assem_param;
@@ -37,8 +28,8 @@ void assembler_process(char * nameOfFile){
     int entry_flag = 0;
     int external_flag = 0;
 
-    changeNameFile(nameOfAmFile, nameOfFile, "am");
-    changeNameFile(nameOfAsFile, nameOfFile, "as");
+    changeFileName(nameOfAmFile, nameOfFile, "am");
+    changeFileName(nameOfAsFile, nameOfFile, "as");
 
     places_macros(nameOfAmFile, nameOfAsFile, &error); /* updates the am file by arranging the macros in the as file */
 
@@ -66,9 +57,9 @@ void assembler_process(char * nameOfFile){
        return;
     }
 
-    changeNameFile(nameOfExtFile, nameOfFile, "ext");
-    changeNameFile(nameOfEntFile, nameOfFile, "ent");
-    changeNameFile(nameOfObjFile, nameOfFile, "ob"); /* the final file */
+    changeFileName(nameOfExtFile, nameOfFile, "ext");
+    changeFileName(nameOfEntFile, nameOfFile, "ent");
+    changeFileName(nameOfObjFile, nameOfFile, "ob"); /* the final file */
 
     second_pass(assem_param, head_symbol, head_data, nameOfAsFile, nameOfExtFile, nameOfEntFile, nameOfObjFile, &error, &external_flag, &entry_flag);
 
@@ -93,6 +84,9 @@ void assembler_process(char * nameOfFile){
 
 }
 
+/* change the ending of the file name */
+void changeFileName (char *newNameFile, char *nameFile, char *endName){
 
-
+    sprintf(newNameFile, "%s%s.txt", endName,nameFile );
+}
 

@@ -2,5 +2,5 @@
 #include "second_pass.h"
 #include "structure.h"
 
-void changeNameFile (char *newNameFile, char *nameFile, char *endName);
+void changeFileName (char *newNameFile, char *nameFile, char *endName);
 void assembler_process(char * nameOfFile);
